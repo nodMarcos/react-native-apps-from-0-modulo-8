@@ -1,99 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, Button, FlatList, ActivityIndicator} from 'react-native';
 import firebase from './src/firebaseConnection';
-import List from './src/List';
 
 console.disableYellowBox=true;
 
 export default function App(){
-  const [nome, setNome] = useState('');
-  const [cargo, setCargo] = useState('');
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
 
-  useEffect(()=> {
-
-    async function dados(){
-
-      await firebase.database().ref('users').on('value', (snapshot)=> {
-        setUsuarios([]);
-
-        snapshot.forEach((chilItem) => {
-          let data = {
-            key: chilItem.key,
-            nome: chilItem.val().nome,
-            cargo: chilItem.val().cargo
-          };
-
-          setUsuarios(oldArray => [...oldArray, data].reverse());
-        })
-
-        setLoading(false);
-
+  async function signUp(){
+    await firebase.auth().createUserWithEmailAndPassword(email, password)
+    .then(value => {
+      firebase.database().ref('users').child(value.user.uid).set({
+        name,
       })
 
-    }
-
-    dados();
-
-
-  }, []);
-
-
-
-  async function cadastrar(){
-    if(nome !== '' & cargo !== ''){
-      let usuarios = await firebase.database().ref('usuarios');
-      let chave = usuarios.push().key;
-
-      usuarios.child(chave).set({
-        nome: nome,
-        cargo: cargo
-      });
-
-      alert('Cadastrado com sucesso!');
-      setCargo('');
-      setNome('');
-    }
+      alert("User created!")
+      setName('')
+      setEmail('')
+      setPassword('')
+    })
+    .catch(error => {
+      alert("Something went wrong...")
+    })
   }
+
+  
 
   return(
     <View style={styles.container}>
-      <Text style={styles.texto}>Nome</Text>
+      
+      <Text style={styles.texto}>Name</Text>
       <TextInput
       style={styles.input}
       underlineColorAndroid="transparent"
-      onChangeText={(texto) => setNome(texto) }
-      value={nome}
+      onChangeText={(text) => setName(text) }
+      value={name}
       />
 
-      <Text style={styles.texto}>Cargo</Text>
+      <Text style={styles.texto}>E-mail</Text>
       <TextInput
       style={styles.input}
       underlineColorAndroid="transparent"
-      onChangeText={(texto) => setCargo(texto) }
-      value={cargo}
+      onChangeText={(text) => setEmail(text) }
+      value={email}
+      />
+
+      <Text style={styles.texto}>Password</Text>
+      <TextInput
+      style={styles.input}
+      underlineColorAndroid="transparent"
+      onChangeText={(text) => setPassword(text) }
+      value={password}
       />
 
       <Button
-      title="Novo funcionario"
-      onPress={cadastrar}
+      title="Sign Up"
+      onPress={signUp}
       />
-
-      {loading ? 
-      (
-        <ActivityIndicator color="#121212" size={45} />
-      ) :
-      (
-        <FlatList
-        keyExtractor={item => item.key}
-        data={usuarios}
-        renderItem={ ({item}) => ( <List data={item} /> )  }
-        />
-      )
-      }
-
-
+     
     </View>
   );
 }
